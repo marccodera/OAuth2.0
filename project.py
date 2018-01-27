@@ -45,7 +45,7 @@ def showLogin():
 
 
 # Server Side function for google connect
-app.route('/gconnect', methods=['POST'])
+@app.route('/gconnect', methods=['POST'])
 def gconnect():
     # Validate state token the client sent to the server matches the one server sent to the client
     if request.args.get('state') != login_session['state']:
