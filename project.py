@@ -120,6 +120,13 @@ def gconnect():
     login_session['picture'] = data['picture']
     login_session['email'] = data['email']
 
+    # see if user exists. If it doesn't make a new one
+    user_id = getUserID(login_session['email'])
+    if not user_id:
+        user_id = createUser(login_session)
+    login_session['user_id'] = user_id
+
+
     output = ''
     output += '<h1>Welcome, '
     output += login_session['username']
@@ -225,6 +232,9 @@ def restaurantsJSON():
 @app.route('/restaurant/')
 def showRestaurants():
   restaurants = session.query(Restaurant).order_by(asc(Restaurant.name))
+  #If user is not in the userlist returns public html file
+  if 'username' not in login_session:
+      return render_template('publicrestaurants.html', restaurants = restaurants)
   return render_template('restaurants.html', restaurants = restaurants)
 
 #Create a new restaurant
@@ -266,6 +276,8 @@ def deleteRestaurant(restaurant_id):
   #Checking the user is logged in
   if 'username' not in login_session:
       return redirect('/login')
+  if restaurantToDelete.user_id != login_session['user_id']:
+      return "<script>function myFunction() {alert('You are not authorized to delete this restaurant. Please create your own restaurant in order to delete.');}</script><body onload='myFunction()'>"
   restaurantToDelete = session.query(
     Restaurant).filter_by(id = restaurant_id).one()
   if request.method == 'POST':
@@ -282,7 +294,11 @@ def deleteRestaurant(restaurant_id):
 def showMenu(restaurant_id):
     restaurant = session.query(Restaurant).filter_by(id = restaurant_id).one()
     items = session.query(MenuItem).filter_by(restaurant_id = restaurant_id).all()
-    return render_template('menu.html', items = items, restaurant = restaurant)
+    creator = getUserInfo(restaurant.user_id)
+    #If user is not in the userlist or is not the menu ID creator, returns public html file
+    if 'username' not in login_session or creator.id != login_session['user_id']:
+        return render_template('publicmenu.html', items = items, restaurant = restaurant, creator= creator)
+    return render_template('menu.html', items = items, restaurant = restaurant, creator= creator)
      
 
 
